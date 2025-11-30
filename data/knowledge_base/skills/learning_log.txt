@@ -1,0 +1,14 @@
+LEARNING LOG - Week 1
+
+Day 1: Python environment setup, virtualenv, git basics
+Day 2: Ollama LLM integration, system prompts, API calls
+Day 3: RAG with ChromaDB, vector search, knowledge base
+
+Insights:
+- Vector search feels like magic - finds relevant info without exact keywords!
+- Economist thinking translates well to data structures
+- Building while learning > passive tutorials
+
+Next Week Focus:
+- File processing (PDFs, Word docs)
+- More Python libraries (Pandas preview)
