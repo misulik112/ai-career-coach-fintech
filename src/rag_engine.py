@@ -74,6 +74,41 @@ class KnowledgeBase:
             sample = self.collection.peek(limit=1)
             print(f"   Sample document: {sample['ids'][0]}")
 
+    def load_job_posts(self, folder_path="data/monitored_folders/job_posts"):
+        """Load job descriptions from folder"""
+        from file_processor import FileProcessor
+
+        processor = FileProcessor()
+        job_files = processor.load_folder(folder_path)
+
+        if not job_files:
+            print("⚠️ No job posts found")
+            return
+
+        jobs_loaded = 0
+        for job_data in job_files:
+            # Add to vector database
+            doc_id = (
+                f"job_{job_data['filename'].replace('.txt', '').replace('.pdf', '')}"
+            )
+
+            self.collection.upsert(
+                documents=[job_data["content"]],
+                ids=[doc_id],
+                metadatas=[
+                    {
+                        "source": job_data["filename"],
+                        "type": "job_description",
+                        "word_count": job_data["word_count"],
+                    }
+                ],
+            )
+
+            jobs_loaded += 1
+            print(f"   ✓ Indexed: {job_data['filename']}")
+
+        print(f"\n✅ Loaded {jobs_loaded} job post(s) into vector DB")
+
 
 # Quick test
 if __name__ == "__main__":
@@ -82,10 +117,13 @@ if __name__ == "__main__":
     print("\n--- Loading Knowledge Files ---")
     kb.load_knowledge_files()
 
-    print("\n--- Testing Search ---")
-    query = "What econometric skills do I have?"
+    print("\n--- Loading Job Posts ---")
+    kb.load_job_posts()
+
+    print("\n--- Testing Job Search ---")
+    query = "What Python skills are required?"
     print(f"Query: {query}\n")
-    context = kb.search(query)
-    print(f"Found context:\n{context[:300]}...")
+    context = kb.search(query, n_results=1)
+    print(f"Found:\n{context[:400]}...")
 
     kb.get_stats()

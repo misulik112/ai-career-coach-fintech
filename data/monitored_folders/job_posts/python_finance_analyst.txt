@@ -1,0 +1,33 @@
+Job Title: Senior Python Finance Analyst
+Location: Remote (Europe)
+Salary: €65,000 - €85,000
+
+About the Role:
+We're seeking a Python Finance Analyst to build automated reporting systems and financial models. You'll work with economics data, create dashboards, and support our risk management team.
+
+Required Skills:
+- 3+ years Python programming (Pandas, NumPy required)
+- Financial analysis experience
+- Statistical modeling and forecasting
+- SQL database queries
+- Excel expertise (VBA a plus)
+- Data visualization (Tableau or Python libraries)
+
+Preferred Qualifications:
+- Economics or Finance degree
+- Experience with time series analysis
+- Knowledge of risk modeling frameworks
+- FastAPI or Flask for APIs
+- Git version control
+
+Responsibilities:
+- Automate monthly financial reports using Python
+- Build econometric models for forecasting
+- Create interactive dashboards for executives
+- Collaborate with data engineering team
+- Document code and maintain data pipelines
+
+Nice to Have:
+- Cloud platforms (AWS, Azure)
+- Docker containerization
+- Regulatory reporting experience (Basel III, IFRS)
