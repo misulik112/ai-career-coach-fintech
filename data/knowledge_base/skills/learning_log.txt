@@ -12,3 +12,9 @@ Insights:
 Next Week Focus:
 - File processing (PDFs, Word docs)
 - More Python libraries (Pandas preview)
+
+Day 5 Update:
+- Learned file monitoring with watchdog
+- Understanding event-driven architecture
+- Portfolio growing: 4 skills mastered
+

@@ -4,13 +4,15 @@ Now with personal knowledge base (RAG)!
 """
 
 import os
+import sys
 from datetime import datetime
 from llm_engine import LocalLLM
 from rag_engine import KnowledgeBase
+from file_watcher import FileWatcher
 
 
 class CareerCoach:
-    def __init__(self):
+    def __init__(self, enable_watcher=False):
         self.user_profile = {
             "current_role": "Economist (8 years)",
             "target_role": "Python Finance Freelancer",
@@ -25,15 +27,40 @@ class CareerCoach:
         # Initialize rag engine
         self.kb = KnowledgeBase()
 
+        # Optinal file watcher
+        self.watcher = None
+        if enable_watcher:
+            watch_folders = [
+                "data/monitored_folders/job_posts",
+                "data/knowledge_base/skills",
+            ]
+            self.watcher = FileWatcher(watch_folders)
+
         print("🤖 AI Career Coach initialized!")
         print(f"👤 Profile: {self.user_profile['current_role']}")
         print(f"🎯 Goal: {self.user_profile['target_role']}")
         print(f"🧠 Brain: Local LLM + RAG Knowledge Base)")
+        if enable_watcher:
+            print(f"👁️  File Watcher: ENABLED")
+
+    def start_monitoring(self):
+        """Start real-time file monitoring"""
+        if self.watcher:
+            print("\n🔍 Starting file monitoring...")
+            self.watcher.start()
+        else:
+            print("⚠️ File watcher not enabled")
+
+    def stop_monitoring(self):
+        """Stop file monitoring"""
+        if self.watcher:
+            self.watcher.stop()
 
     def load_knowledge(self):
         """Load personal knowledge into vector DB"""
         print("\n📚 Loading your skills and goals...")
         self.kb.load_knowledge_files()
+        self.kb.load_job_posts()
 
     def chat(self, message):
         """Chat with AI coach using local LLM"""
@@ -102,19 +129,35 @@ Be direct and actionable."""
 
 def main():
     print("=" * 70)
-    print("🚀 AI CAREER COACH - Week 1 Day 4")
-    print("   Job Description Analysis + Skills Gap!")
+    print("🚀 AI CAREER COACH - Week 1 Day 5")
+    print("   Real-Time File Monitoring!")
     print("=" * 70)
 
-    # Initialize coach
-    coach = CareerCoach()
+    # Check command line args
+    if len(sys.argv) > 1 and sys.argv[1] == "--watch":
+        # Monitor mode
+        coach = CareerCoach(enable_watcher=True)
+        coach.load_knowledge()
 
-    # Load knowledge
-    coach.load_knowledge()
+        print("\n" + "=" * 70)
+        print("Entering WATCH MODE")
+        print("Drop files into monitored folders for instant analysis!")
+        print("=" * 70)
 
-    # NEW: Load job posts
-    print("\n📋 Loading job descriptions...")
-    coach.kb.load_job_posts()
+        try:
+            coach.start_monitoring()
+            import time
+
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            coach.stop_monitoring()
+            print("\n👋 Goodbye!")
+
+    else:
+        # Standard mode
+        coach = CareerCoach(enable_watcher=False)
+        coach.load_knowledge()
 
     # Test RAG-powered conversation
     print("\n" + "=" * 70)
@@ -123,10 +166,12 @@ def main():
     coach.analyze_job_fit("python_finance_analyst")
 
     print("\n" + "=" * 70)
-    print("✅ DAY 4 COMPLETE!")
-    print("📝 Next: Day 5 - File watcher for real-time monitoring")
-    print("🔥 Streak: 4/56 days")
-    print("🍕 Progress: 3 more days → Pizza delivery unlocked!")
+    print("✅ DAY 5 COMPLETE!")
+    print("📝 Next: Day 6-7 - Week 1 wrap-up + demo video")
+    print("🔥 Streak: 5/56 days")
+    print("🍕 Reward: 2 more days → Pizza delivery!")
+    print("\n💡 TIP: Run with --watch to enable file monitoring:")
+    print("   python src/main.py --watch")
     print("=" * 70)
 
 

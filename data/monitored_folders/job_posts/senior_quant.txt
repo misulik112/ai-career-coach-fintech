@@ -1,0 +1,3 @@
+Job Title: Senior Quantitative Analyst
+Requirements: Python, R, time series modeling, econometrics, PhD preferred
+Salary: €95,000 - €120,000
