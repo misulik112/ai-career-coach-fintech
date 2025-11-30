@@ -1,11 +1,12 @@
 """
-AI Career Coach - Week 1 Day 2
-Now with REAL local LLM intelligence!
+AI Career Coach - Week 1 Day 3
+Now with personal knowledge base (RAG)!
 """
 
 import os
 from datetime import datetime
 from llm_engine import LocalLLM
+from rag_engine import KnowledgeBase
 
 
 class CareerCoach:
@@ -21,11 +22,18 @@ class CareerCoach:
         # Initialize local LLM
         self.llm = LocalLLM()
 
+        # Initialize rag engine
+        self.kb = KnowledgeBase()
+
         print("🤖 AI Career Coach initialized!")
         print(f"👤 Profile: {self.user_profile['current_role']}")
         print(f"🎯 Goal: {self.user_profile['target_role']}")
-        print(f"⏱️  Timeline: {self.user_profile['transition_timeline']}")
-        print(f"🧠 Brain: Local LLM (Ollama llama3.2)")
+        print(f"🧠 Brain: Local LLM + RAG Knowledge Base)")
+
+    def load_knowledge(self):
+        """Load personal knowledge into vector DB"""
+        print("\n📚 Loading your skills and goals...")
+        self.kb.load_knowledge_files()
 
     def chat(self, message):
         """Chat with AI coach using local LLM"""
@@ -33,14 +41,24 @@ class CareerCoach:
 
         print(f"\n💬 You: {message}")
 
-        # Add user context to help LLM
-        context = f"Session #{self.user_profile['session_count']}"
+        # Search knowledge base for relevant context
+        relevant_context = self.kb.search(message, n_results=2)
 
-        # Get response from local LLM
-        response = self.llm.chat(message, context=context)
+        # Get response from LLM with retrieved context
+        response = self.llm.chat(message, context=relevant_context)
 
         print(f"🤖 Coach: {response}")
         return response
+
+    def analyze_skills_gap(self):
+        """Special analysis: What skills to learn?"""
+        print("\n🔍 Running Skills Gap Analysis...")
+        query = "Compare my current economics and Python skills to my transition goals."
+        context = self.kb.search(query, n_results=3)
+        prompt = "Based on my current skills and goals, what are the top 3 Python skills I should focus on this month? Be specific."
+        response = self.llm.chat(prompt, context=context)
+
+        print(f"🤖 Coach Analysis:\n{response}")
 
     def get_stats(self):
         """Show session statistics"""
@@ -50,32 +68,33 @@ class CareerCoach:
 
 
 def main():
-    print("=" * 60)
-    print("🚀 AI CAREER COACH - Week 1 Day 2")
-    print("   Real Local LLM intelligence")
-    print("=" * 60)
+    print("=" * 70)
+    print("🚀 AI CAREER COACH - Week 1 Day 3")
+    print("   Personal Knowledge Base (RAG) Online!")
+    print("=" * 70)
 
     # Initialize coach
     coach = CareerCoach()
 
-    # Test conversation flow
-    print("\n--- Testing Real AI Conversation ---")
+    # Load knowledge
+    coach.load_knowledge()
 
-    coach.chat("Hello! I'm excited to start my transition.")
+    # Test RAG-powered conversation
+    print("\n--- Testing RAG-Powered Conversation ---")
 
-    coach.chat("What's the first Python skill I should learn as an economist?")
+    coach.chat("What econometric methods do I already know?.")
 
-    coach.chat("How can I use my econometrics background?")
+    coach.chat("How can I use my Excel skills in Python?")
 
     # Show Stats
     coach.get_stats()
 
-    print("\n" + "=" * 60)
-    print("✅ DAY 2 COMPLETE!")
-    print("📝 Next: Day 3 - Add Chroma vector DB for CV analysis")
-    print("🔥 Streak: 2/56 days")
-    print("🎮 Reward progress: 1 more day → Gaming unlocked!")
-    print("=" * 60)
+    print("\n" + "=" * 70)
+    print("✅ DAY 3 COMPLETE!")
+    print("📝 Next: Day 4 - PDF file loader for job descriptions")
+    print("🔥 Streak: 3/56 days")
+    print("🎮 REWARD UNLOCKED: 1 hour gaming time!")
+    print("=" * 70)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,28 @@
+CAREER TRANSITION GOALS - 12 Month Plan
+
+Target Role: Python Finance Freelancer
+Target Income: €1500/month
+Timeline: 12 months from now (Dec 2026)
+
+Skills to Develop:
+- Python data analysis (Pandas, NumPy)
+- Financial modeling in Python (QuantLib, PyPortfolioOpt)
+- Statistical libraries (statsmodels, scipy)
+- Data visualization (matplotlib, plotly, seaborn)
+- API development (FastAPI for financial data)
+- Database skills (SQL, PostgreSQL)
+- Git version control (learning now!)
+
+Target Freelance Niches:
+- Automated financial reporting systems
+- Risk modeling and Monte Carlo simulations
+- Economic data pipelines and dashboards
+- Trading strategy backtesting
+- Regulatory compliance automation
+- Financial forecasting tools
+
+Unique Value Proposition:
+"8-year economist who codes Python - I understand both the finance domain AND the technical implementation"
+
+First Milestone (Month 3): 
+3 portfolio projects demonstrating econ → Python translation

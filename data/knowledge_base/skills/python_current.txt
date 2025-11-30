@@ -1,0 +1,20 @@
+PYTHON SKILLS - Current Level: Beginner
+
+What I Know:
+- Basic syntax: variables, data types, strings
+- Control flow: if/else statements, for loops, while loops
+- Functions: defining, calling, parameters, return values
+- Lists and dictionaries (basic operations)
+- Reading documentation and error messages
+
+What I've Built So Far:
+- Week 1 Day 1: Career Coach class structure
+- Week 1 Day 2: Ollama LLM integration
+- Simple automation scripts for file organization
+
+Learning Resources Used:
+- Python documentation
+- Online tutorials (beginner level)
+- Stack Overflow for troubleshooting
+
+Confidence Level: 3/10 in Python, but eager to learn!

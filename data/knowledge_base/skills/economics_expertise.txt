@@ -1,0 +1,33 @@
+ECONOMICS EXPERTISE = 8 Years Professional Experience
+
+Macroeconomic Analysis: 
+- GDP forecasting using time series models (ARIMA, SARIMA)
+- Inflation rate predictions and trend Analysis
+- Monetary policy impact assesments
+- Labor market statistics and unemployment modeling
+
+Econometric Methods:
+- Regression analysis (OLS, GLS, panel data)
+- Hypothesis testing and statistical inference
+- Instrumental variables for causal inference
+- Vector autoregression (VAR) models
+- Cointegration analysis
+
+Statistical Tools Currently Used:
+- Excel (advanced formulas, pivot tables, VBA macros)
+- Stata for econometric modeling
+- R for statistical analysis (basic level)
+- SPSS for survey data analysis
+
+Data Work Experience:
+- Financial data cleaning and preparation
+- Economic indicator tracking (FRED, Eurostat, World Bank)
+- Report automation using Excel/Stata
+- Visualization: charts, trend graphs, comparative analysis
+
+Domain Knowledge:
+- Financial markets fundamentals
+- Corporate finance basics
+- Risk assessment frameworks
+- Regulatory economics
+- Development economics
