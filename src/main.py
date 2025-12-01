@@ -6,9 +6,11 @@ Now with personal knowledge base (RAG)!
 import os
 import sys
 from datetime import datetime
+from typing import List
 from llm_engine import LocalLLM
 from rag_engine import KnowledgeBase
 from file_watcher import FileWatcher
+from skills_tracker import SkillsTracker
 
 
 class CareerCoach:
@@ -27,7 +29,7 @@ class CareerCoach:
         # Initialize rag engine
         self.kb = KnowledgeBase()
 
-        # Optinal file watcher
+        # Optional file watcher
         self.watcher = None
         if enable_watcher:
             watch_folders = [
@@ -35,6 +37,9 @@ class CareerCoach:
                 "data/knowledge_base/skills",
             ]
             self.watcher = FileWatcher(watch_folders)
+
+        # Skills tracker
+        self.skills_tracker = SkillsTracker(self.kb)
 
         print("🤖 AI Career Coach initialized!")
         print(f"👤 Profile: {self.user_profile['current_role']}")
@@ -87,6 +92,48 @@ class CareerCoach:
 
         print(f"🤖 Coach Analysis:\n{response}")
 
+    def show_skills_report(self):
+        """Display weekly skills progress"""
+        print("\n" + self.skills_tracker.generate_progress_report())
+
+    def analyze_job_readiness(self, job_skills: List[str]):
+        """Analyze readiness for job based on skills"""
+        print(f"\n🎯 JOB READINESS ANALYSIS")
+        print("=" * 60)
+
+        comparison = self.skills_tracker.compare_with_job_requirements(job_skills)
+
+        # Display results
+        print(f"\n📊 Readiness Score: {comparison['readiness_score']}%")
+        print(
+            f"   Skills Matched: {comparison['skills_matched']}/{comparison['total_required']}"
+        )
+
+        if comparison["matches"]:
+            print(f"\n✅ Skills You Have:")
+            for match in sorted(
+                comparison["matches"], key=lambda x: x["proficiency"], reverse=True
+            ):
+                bar = "█" * match["proficiency"] + "░" * (10 - match["proficiency"])
+                print(f"   {match['skill']:<15} [{bar}] {match['proficiency']}/10")
+
+        if comparison["gaps"]:
+            print(f"\n❌ Skills to Learn:")
+            for gap in comparison["gaps"]:
+                print(f"   - {gap['skill']}")
+
+            # Get LLM recommendation
+            gaps_list = [g["skill"] for g in comparison["gaps"]]
+            prompt = f"I need to learn these skills: {', '.join(gaps_list)}. Give me a 2-week action plan (3 bullet points max)."
+
+            context = f"Current skills: {[m['skill'] for m in comparison['matches']]}"
+            recommendation = self.llm.chat(prompt, context=context)
+
+            print(f"\n🤖 Coach Recommendation:")
+            print(f"   {recommendation}")
+
+        print("=" * 60)
+
     def get_stats(self):
         """Show session statistics"""
         print(f"\n📊 Session Stats:")
@@ -129,49 +176,29 @@ Be direct and actionable."""
 
 def main():
     print("=" * 70)
-    print("🚀 AI CAREER COACH - Week 1 Day 5")
-    print("   Real-Time File Monitoring!")
+    print("🚀 AI CAREER COACH - Week 2 Day 9")
+    print("   Skills Proficiency Tracking!")
     print("=" * 70)
 
-    # Check command line args
-    if len(sys.argv) > 1 and sys.argv[1] == "--watch":
-        # Monitor mode
-        coach = CareerCoach(enable_watcher=True)
-        coach.load_knowledge()
-
-        print("\n" + "=" * 70)
-        print("Entering WATCH MODE")
-        print("Drop files into monitored folders for instant analysis!")
-        print("=" * 70)
-
-        try:
-            coach.start_monitoring()
-            import time
-
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            coach.stop_monitoring()
-            print("\n👋 Goodbye!")
-
-    else:
-        # Standard mode
-        coach = CareerCoach(enable_watcher=False)
-        coach.load_knowledge()
-
-    # Test RAG-powered conversation
-    print("\n" + "=" * 70)
-    print("--- Job Fit Analysis ---")
-
-    coach.analyze_job_fit("python_finance_analyst")
+    # Initialize coach
+    coach = CareerCoach(enable_watcher=False)
+    coach.load_knowledge()
 
     print("\n" + "=" * 70)
-    print("✅ DAY 5 COMPLETE!")
-    print("📝 Next: Day 6-7 - Week 1 wrap-up + demo video")
-    print("🔥 Streak: 5/56 days")
-    print("🍕 Reward: 2 more days → Pizza delivery!")
-    print("\n💡 TIP: Run with --watch to enable file monitoring:")
-    print("   python src/main.py --watch")
+    print("--- Weekly Skills Report ---")
+    coach.show_skills_report()
+
+    print("\n" + "=" * 70)
+    print("--- Job Readiness Check ---")
+    # Example Python finance job requirements
+    job_requirements = ["Python", "Pandas", "SQL", "NumPy", "Git", "Excel"]
+    coach.analyze_job_readiness(job_requirements)
+
+    print("\n" + "=" * 70)
+    print("✅ DAY 9 COMPLETE!")
+    print("📝 Next: Day 10 - Wikilink graph + knowledge connections")
+    print("🔥 Streak: 9/56 days")
+    print("🎧 Reward: 5 more days → Audiobook!")
     print("=" * 70)
 
 

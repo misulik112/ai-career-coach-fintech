@@ -143,6 +143,12 @@ class ObsidianSkillHandler(FileSystemEventHandler):
         self.parser = MarkdownParser()
         print("🎯 Skill Handler initialized")
 
+        from skills_tracker import SkillsTracker
+
+        self.tracker = SkillsTracker(kb)
+
+        print("🎯 Skill Handler initialized")
+
     def on_created(self, event):
         if event.is_directory or not event.src_path.endswith(".md"):
             return
@@ -196,3 +202,14 @@ class ObsidianSkillHandler(FileSystemEventHandler):
         )
 
         print(f"   ✓ Skill tracked: {proficiency}/10 proficiency")
+
+        # New: Auto-track proficiency history
+        skill_name = parsed["filename"].replace(".md", "")
+        self.tracker.update_skill_history(skill_name, proficiency)
+
+        # Show progress if available
+        progress = self.tracker.get_skill_progress(skill_name)
+        if progress and progress["improvement"] != 0:
+            print(
+                f"   📈 Progress: {progress['start_level']}→{progress['current_level']} (+{progress['improvement']})"
+            )
