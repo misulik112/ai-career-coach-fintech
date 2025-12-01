@@ -18,3 +18,7 @@ pydantic>=2.5.0
 
 # Week 1 Day 5: Real-time file monitoring
 watchdog>=3.0.0
+
+# Week 2 Day 8: YAML parsing
+pyyaml>=6.0.1
+python-frontmatter>=1.1.0
