@@ -11,6 +11,7 @@ from llm_engine import LocalLLM
 from rag_engine import KnowledgeBase
 from file_watcher import FileWatcher
 from skills_tracker import SkillsTracker
+from knowledge_graph import KnowledgeGraph
 
 
 class CareerCoach:
@@ -40,6 +41,9 @@ class CareerCoach:
 
         # Skills tracker
         self.skills_tracker = SkillsTracker(self.kb)
+
+        # Initialize the knowledge_graph
+        self.knowledge_graph = None
 
         print("🤖 AI Career Coach initialized!")
         print(f"👤 Profile: {self.user_profile['current_role']}")
@@ -173,32 +177,95 @@ Be direct and actionable."""
         print(f"\n🤖 Coach Analysis:\n{response}")
         print("=" * 60)
 
+    def build_knowledge_graph(self, vault_path="data/obsidian_vault"):
+        """Build knowledge graph from Obsidian vault"""
+        print("\n🕸️  Building knowledge graph...")
+        self.knowledge_graph = KnowledgeGraph(self.kb)
+        self.knowledge_graph.build_from_vault(vault_path)
+        return self.knowledge_graph
+
+    def show_learning_path(self, from_skill: str, to_goal: str):
+        """Show how a skill connects to a goal"""
+        if not self.knowledge_graph:
+            print("⚠️ Build knowledge graph first!")
+            return
+
+        print(f"\n🎯 LEARNING PATH ANALYSIS")
+        print("=" * 60)
+        print(f"From: {from_skill}")
+        print(f"To:   {to_goal}")
+
+        path = self.knowledge_graph.find_path(from_skill, to_goal)
+
+        if path:
+            print(f"\n✅ Path found ({len(path) - 1} steps):\n")
+            for i, node in enumerate(path):
+                indent = "   " * i
+                arrow = "→" if i < len(path) - 1 else "★"
+                node_type = self.knowledge_graph.nodes.get(node, {}).get(
+                    "type", "unknown"
+                )
+                print(f"{indent}{arrow} {node} ({node_type})")
+
+            # Get LLM insight
+            path_str = " → ".join(path)
+            prompt = f"I want to go from {from_skill} to {to_goal}. The connection path is: {path_str}. Give me 3 actionable steps (brief)."
+
+            insight = self.llm.chat(prompt, context="")
+            print(f"\n🤖 Coach Recommendation:")
+            print(f"   {insight}")
+        else:
+            print("\n❌ No direct path found")
+            print("   Try creating a note that links these concepts!")
+
+        print("=" * 60)
+
+    def explore_connections(self, node_name: str):
+        """Explore all connections for a concept"""
+        if not self.knowledge_graph:
+            print("⚠️ Build knowledge graph first!")
+            return
+
+        self.knowledge_graph.visualize_connections(node_name, max_depth=2)
+
 
 def main():
     print("=" * 70)
-    print("🚀 AI CAREER COACH - Week 2 Day 9")
-    print("   Skills Proficiency Tracking!")
+    print("🚀 AI CAREER COACH - Week 2 Day 10")
+    print("   Knowledge Graph & Learning Paths!")
     print("=" * 70)
 
     # Initialize coach
     coach = CareerCoach(enable_watcher=False)
     coach.load_knowledge()
 
-    print("\n" + "=" * 70)
-    print("--- Weekly Skills Report ---")
-    coach.show_skills_report()
+    # Build knowledge graph
+    graph = coach.build_knowledge_graph()
 
     print("\n" + "=" * 70)
-    print("--- Job Readiness Check ---")
-    # Example Python finance job requirements
-    job_requirements = ["Python", "Pandas", "SQL", "NumPy", "Git", "Excel"]
-    coach.analyze_job_readiness(job_requirements)
+    print("--- Graph Statistics ---")
+    stats = graph.get_node_stats()
+    print(f"📊 Total concepts tracked: {stats['total_nodes']}")
+    print(f"🔗 Total connections: {stats['total_edges']}")
+
+    if stats["top_connected"]:
+        print(f"\n🏆 Your most central concepts:")
+        for node, count in stats["top_connected"][:3]:
+            print(f"   • {node}: {count} connections")
 
     print("\n" + "=" * 70)
-    print("✅ DAY 9 COMPLETE!")
-    print("📝 Next: Day 10 - Wikilink graph + knowledge connections")
-    print("🔥 Streak: 9/56 days")
-    print("🎧 Reward: 5 more days → Audiobook!")
+    print("--- Connection Explorer ---")
+    coach.explore_connections("skills/Python")
+
+    print("\n" + "=" * 70)
+    print("--- Learning Path ---")
+    coach.show_learning_path("skills/Python", "goals/Freelance Transition")
+
+    print("\n" + "=" * 70)
+    print("✅ DAY 10 COMPLETE!")
+    print("📝 Next: Day 11 - Smart document chunking")
+    print("🔥 Streak: 10/56 days 🎉 DOUBLE DIGITS!")
+    print("🎧 Reward: 4 more days → Audiobook!")
     print("=" * 70)
 
 
