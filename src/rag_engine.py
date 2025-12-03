@@ -164,6 +164,75 @@ class KnowledgeBase:
 
         return chunks
 
+    def load_pdfs(self, folder_path="data/pdfs"):
+        """Load PDF documents into knowledge base"""
+        from pdf_parser import PDFParser
+
+        parser = PDFParser()
+        pdf_files = parser.parse_folder(folder_path)
+
+        if not pdf_files:
+            print("⚠️  No PDF files found")
+            return
+
+        pdfs_loaded = 0
+
+        for pdf_data in pdf_files:
+            # Use smart chunking for long PDFs
+            if pdf_data["word_count"] > 500:
+                # Chunk it
+                chunks = self.chunker.chunk_simple(
+                    pdf_data["content"], pdf_data["filename"]
+                )
+
+                print(f"\n📄 Processing: {pdf_data['filename']}")
+                print(
+                    f"   Created {len(chunks)} chunks from {pdf_data['page_count']} pages"
+                )
+
+                # Add each chunk
+                for chunk in chunks:
+                    doc_id = f"pdf_{pdf_data['filename']}_{chunk.chunk_id}"
+
+                    self.collection.upsert(
+                        documents=[chunk.text],
+                        ids=[doc_id],
+                        metadatas=[
+                            {
+                                "source": pdf_data["filename"],
+                                "type": "pdf_document",
+                                "chunk_id": chunk.chunk_id,
+                                "page_count": pdf_data["page_count"],
+                                "title": pdf_data["metadata"].get("title", ""),
+                                "author": pdf_data["metadata"].get("author", ""),
+                            }
+                        ],
+                    )
+
+                pdfs_loaded += 1
+            else:
+                # Small PDF - add as single document
+                doc_id = f"pdf_{pdf_data['filename']}"
+
+                self.collection.upsert(
+                    documents=[pdf_data["content"]],
+                    ids=[doc_id],
+                    metadatas=[
+                        {
+                            "source": pdf_data["filename"],
+                            "type": "pdf_document",
+                            "page_count": pdf_data["page_count"],
+                            "word_count": pdf_data["word_count"],
+                            "title": pdf_data["metadata"].get("title", ""),
+                        }
+                    ],
+                )
+
+                pdfs_loaded += 1
+                print(f"   ✓ Indexed: {pdf_data['filename']}")
+
+        print(f"\n✅ Loaded {pdfs_loaded} PDF document(s) into vector DB")
+
 
 # Quick test
 if __name__ == "__main__":

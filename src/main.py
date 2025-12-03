@@ -142,9 +142,13 @@ class CareerCoach:
 
     def load_knowledge(self):
         """Load personal knowledge into vector DB"""
-        print("\n📚 Loading your skills and goals...")
+        print("\n📚 Loading your skills, goals, knowledge sources...")
         self.kb.load_knowledge_files()
         self.kb.load_job_posts()
+
+        # Load PDFs
+        print("\n--- Loadig PDF Documents ---")
+        self.kb.load_pdfs("data/pdfs")
 
     def chat(self, message):
         """Chat with AI coach using local LLM"""
