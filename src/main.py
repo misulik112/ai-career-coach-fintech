@@ -146,9 +146,13 @@ class CareerCoach:
         self.kb.load_knowledge_files()
         self.kb.load_job_posts()
 
-        # Load PDFs
+        # Load PDF files
         print("\n--- Loadig PDF Documents ---")
         self.kb.load_pdfs("data/pdfs")
+
+        # Load DOCX files
+        print("\n--- Loading Word Documents ---")
+        self.kb.load_docx("data/docx")
 
     def chat(self, message):
         """Chat with AI coach using local LLM"""

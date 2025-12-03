@@ -233,6 +233,77 @@ class KnowledgeBase:
 
         print(f"\n✅ Loaded {pdfs_loaded} PDF document(s) into vector DB")
 
+    def load_docx(self, folder_path="data/docx"):
+        """Load Word documents into knowledge base"""
+        from docx_parser import DOCXParser
+
+        parser = DOCXParser()
+        docx_files = parser.parse_folder(folder_path)
+
+        if not docx_files:
+            print("⚠️  No DOCX files found")
+            return
+
+        docx_loaded = 0
+
+        for docx_data in docx_files:
+            # Use smart chunking for long documents
+            if docx_data["word_count"] > 500:
+                # Chunk it
+                chunks = self.chunker.chunk_simple(
+                    docx_data["content"], docx_data["filename"]
+                )
+
+                print(f"\n📝 Processing: {docx_data['filename']}")
+                print(
+                    f"   Created {len(chunks)} chunks from {docx_data['paragraph_count']} paragraphs"
+                )
+
+                # Add each chunk
+                for chunk in chunks:
+                    doc_id = f"docx_{docx_data['filename']}_{chunk.chunk_id}"
+
+                    self.collection.upsert(
+                        documents=[chunk.text],
+                        ids=[doc_id],
+                        metadatas=[
+                            {
+                                "source": docx_data["filename"],
+                                "type": "docx_document",
+                                "chunk_id": chunk.chunk_id,
+                                "paragraph_count": str(docx_data["paragraph_count"]),
+                                "title": docx_data["metadata"].get("title", ""),
+                                "author": docx_data["metadata"].get("author", ""),
+                            }
+                        ],
+                    )
+
+                docx_loaded += 1
+            else:
+                # Small document - add as single document
+                doc_id = f"docx_{docx_data['filename']}"
+
+                self.collection.upsert(
+                    documents=[docx_data["content"]],
+                    ids=[doc_id],
+                    metadatas=[
+                        {
+                            "source": docx_data["filename"],
+                            "type": "docx_document",
+                            "paragraph_count": str(docx_data["paragraph_count"]),
+                            "table_count": str(docx_data["table_count"]),
+                            "word_count": str(docx_data["word_count"]),
+                            "title": docx_data["metadata"].get("title", ""),
+                            "author": docx_data["metadata"].get("author", ""),
+                        }
+                    ],
+                )
+
+                docx_loaded += 1
+                print(f"   ✓ Indexed: {docx_data['filename']}")
+
+        print(f"\n✅ Loaded {docx_loaded} DOCX document(s) into vector DB")
+
 
 # Quick test
 if __name__ == "__main__":
