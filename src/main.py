@@ -12,6 +12,7 @@ from rag_engine import KnowledgeBase
 from file_watcher import FileWatcher
 from skills_tracker import SkillsTracker
 from knowledge_graph import KnowledgeGraph
+from query_cache import QueryCache
 
 
 class CareerCoach:
@@ -45,12 +46,19 @@ class CareerCoach:
         # Initialize the knowledge_graph
         self.knowledge_graph = None
 
+        # Initialize cahce
+        self.cache = QueryCache(default_ttl_days=90)
+
         print("🤖 AI Career Coach initialized!")
         print(f"👤 Profile: {self.user_profile['current_role']}")
         print(f"🎯 Goal: {self.user_profile['target_role']}")
         print(f"🧠 Brain: Local LLM + RAG Knowledge Base)")
+
         if enable_watcher:
             print(f"👁️  File Watcher: ENABLED")
+
+        if self.cache:
+            print(f"💾 Cache: ENABLED (90-day TTL)")
 
     def start_monitoring(self):
         """Start real-time file monitoring"""
@@ -228,44 +236,84 @@ Be direct and actionable."""
 
         self.knowledge_graph.visualize_connections(node_name, max_depth=2)
 
+    def chat_with_cache(self, message: str, use_cache: bool = True):
+        """Chat with caching support"""
+        self.user_profile["session_count"] += 1
+
+        print(f"\n💬 You: {message}")
+
+        # Try cache first
+        if use_cache:
+            cached_response = self.cache.get(message)
+            if cached_response:
+                print(f"🤖 Coach (cached): {cached_response}")
+                return cached_response
+
+        # Cache miss - generate new response
+        relevant_context = self.kb.search(message, n_results=2)
+        response = self.llm.chat(message, context=relevant_context)
+
+        # Cache the response
+        if use_cache:
+            self.cache.set(
+                message,
+                response,
+                ttl_days=7,
+                metadata={"context_used": len(relevant_context)},
+            )
+
+        print(f"🤖 Coach: {response}")
+        return response
+
+    def show_cache_stats(self):
+        """Display cache performance"""
+        print("\n💾 CACHE PERFORMANCE")
+        print("=" * 60)
+        self.cache.print_stats()
+
+        stats = self.cache.get_stats()
+
+        if stats["total_requests"] > 0:
+            savings = stats["hits"] * 0.01  # Assume $0.01 per API call
+            print(f"\n💰 Estimated savings: ${savings:.2f}")
+            print(f"   (Based on {stats['hits']} cache hits @ $0.01 each)")
+
+        print("=" * 60)
+
 
 def main():
     print("=" * 70)
-    print("🚀 AI CAREER COACH - Week 2 Day 10")
-    print("   Knowledge Graph & Learning Paths!")
+    print("🚀 AI CAREER COACH - Week 2 Day 12")
+    print("   Smart Query Caching!")
     print("=" * 70)
 
     # Initialize coach
     coach = CareerCoach(enable_watcher=False)
     coach.load_knowledge()
 
-    # Build knowledge graph
-    graph = coach.build_knowledge_graph()
+    print("\n" + "=" * 70)
+    print("--- Testing Cache System ---")
+
+    # First query (cache miss)
+    print("\nQuery 1 (fresh):")
+    coach.chat_with_cache("What are my top 3 economist skills?")
+
+    # Same query (cache hit!)
+    print("\nQuery 2 (same question):")
+    coach.chat_with_cache("What are my top 3 economist skills?")
+
+    # Different query (cache miss)
+    print("\nQuery 3 (different):")
+    coach.chat_with_cache("How can I use my Excel skills in Python?")
+
+    # Show stats
+    coach.show_cache_stats()
 
     print("\n" + "=" * 70)
-    print("--- Graph Statistics ---")
-    stats = graph.get_node_stats()
-    print(f"📊 Total concepts tracked: {stats['total_nodes']}")
-    print(f"🔗 Total connections: {stats['total_edges']}")
-
-    if stats["top_connected"]:
-        print(f"\n🏆 Your most central concepts:")
-        for node, count in stats["top_connected"][:3]:
-            print(f"   • {node}: {count} connections")
-
-    print("\n" + "=" * 70)
-    print("--- Connection Explorer ---")
-    coach.explore_connections("skills/Python")
-
-    print("\n" + "=" * 70)
-    print("--- Learning Path ---")
-    coach.show_learning_path("skills/Python", "goals/Freelance Transition")
-
-    print("\n" + "=" * 70)
-    print("✅ DAY 10 COMPLETE!")
-    print("📝 Next: Day 11 - Smart document chunking")
-    print("🔥 Streak: 10/56 days 🎉 DOUBLE DIGITS!")
-    print("🎧 Reward: 4 more days → Audiobook!")
+    print("✅ DAY 12 COMPLETE!")
+    print("📝 Next: Days 13-14 - Week 2 finale!")
+    print("🔥 Streak: 12/56 days")
+    print("🎧 REWARD: 2 MORE DAYS → AUDIOBOOK!")
     print("=" * 70)
 
 
