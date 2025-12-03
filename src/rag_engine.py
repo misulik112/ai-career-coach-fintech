@@ -4,8 +4,10 @@ Week 1 Day 3 - Your personal knowledge base brain
 """
 
 import os
+from pathlib import Path
 import chromadb
 from document_chunker import DocumentChunker
+from document_cache import DocumentCache
 from config import Config
 
 
@@ -33,6 +35,8 @@ class KnowledgeBase:
         # Initialize document chunker
         self.chunker = DocumentChunker(chunk_size=500, overlap=50)
 
+        # Initialize document cache
+        self.doc_cache = DocumentCache()
         print(f"📚 Knowledge Base initialized")
         print(f"   Stored documents: {self.collection.count()}")
 
@@ -165,32 +169,49 @@ class KnowledgeBase:
         return chunks
 
     def load_pdfs(self, folder_path="data/pdfs"):
-        """Load PDF documents into knowledge base"""
+        """Load PDF documents with caching"""
         from pdf_parser import PDFParser
 
         parser = PDFParser()
-        pdf_files = parser.parse_folder(folder_path)
+        folder = Path(folder_path)
+
+        if not folder.exists():
+            print(f"⚠️  Folder not found: {folder_path}")
+            return
+
+        pdf_files = list(folder.glob("**/*.pdf"))
 
         if not pdf_files:
             print("⚠️  No PDF files found")
             return
 
         pdfs_loaded = 0
+        pdfs_from_cache = 0
 
-        for pdf_data in pdf_files:
-            # Use smart chunking for long PDFs
+        for pdf_file in pdf_files:
+            # Try cache first
+            cached_data = self.doc_cache.get(pdf_file)
+
+            if cached_data:
+                # Use cached data
+                pdf_data = cached_data
+                pdfs_from_cache += 1
+            else:
+                # Parse fresh
+                pdf_data = parser.parse_file(pdf_file)
+
+                if pdf_data:
+                    # Cache for next time
+                    self.doc_cache.set(pdf_file, pdf_data)
+                else:
+                    continue
+
+            # Add to vector DB (same as before)
             if pdf_data["word_count"] > 500:
-                # Chunk it
                 chunks = self.chunker.chunk_simple(
                     pdf_data["content"], pdf_data["filename"]
                 )
 
-                print(f"\n📄 Processing: {pdf_data['filename']}")
-                print(
-                    f"   Created {len(chunks)} chunks from {pdf_data['page_count']} pages"
-                )
-
-                # Add each chunk
                 for chunk in chunks:
                     doc_id = f"pdf_{pdf_data['filename']}_{chunk.chunk_id}"
 
@@ -202,16 +223,16 @@ class KnowledgeBase:
                                 "source": pdf_data["filename"],
                                 "type": "pdf_document",
                                 "chunk_id": chunk.chunk_id,
-                                "page_count": pdf_data["page_count"],
+                                "page_count": str(pdf_data["page_count"]),
                                 "title": pdf_data["metadata"].get("title", ""),
-                                "author": pdf_data["metadata"].get("author", ""),
                             }
                         ],
                     )
 
-                pdfs_loaded += 1
+                if not cached_data:
+                    print(f"\n📄 Processing: {pdf_data['filename']}")
+                    print(f"   Created {len(chunks)} chunks")
             else:
-                # Small PDF - add as single document
                 doc_id = f"pdf_{pdf_data['filename']}"
 
                 self.collection.upsert(
@@ -221,45 +242,63 @@ class KnowledgeBase:
                         {
                             "source": pdf_data["filename"],
                             "type": "pdf_document",
-                            "page_count": pdf_data["page_count"],
-                            "word_count": pdf_data["word_count"],
+                            "page_count": str(pdf_data["page_count"]),
+                            "word_count": str(pdf_data["word_count"]),
                             "title": pdf_data["metadata"].get("title", ""),
                         }
                     ],
                 )
 
-                pdfs_loaded += 1
-                print(f"   ✓ Indexed: {pdf_data['filename']}")
+                if not cached_data:
+                    print(f"   ✓ Indexed: {pdf_data['filename']}")
 
-        print(f"\n✅ Loaded {pdfs_loaded} PDF document(s) into vector DB")
+            pdfs_loaded += 1
+
+        print(f"\n✅ Loaded {pdfs_loaded} PDF(s) ({pdfs_from_cache} from cache)")
 
     def load_docx(self, folder_path="data/docx"):
-        """Load Word documents into knowledge base"""
+        """Load Word documents with caching"""
         from docx_parser import DOCXParser
 
         parser = DOCXParser()
-        docx_files = parser.parse_folder(folder_path)
+        folder = Path(folder_path)
+
+        if not folder.exists():
+            print(f"⚠️  Folder not found: {folder_path}")
+            return
+
+        docx_files = [
+            f for f in folder.glob("**/*.docx") if not f.name.startswith("~$")
+        ]
 
         if not docx_files:
             print("⚠️  No DOCX files found")
             return
 
         docx_loaded = 0
+        docx_from_cache = 0
 
-        for docx_data in docx_files:
-            # Use smart chunking for long documents
+        for docx_file in docx_files:
+            # Try cache first
+            cached_data = self.doc_cache.get(docx_file)
+
+            if cached_data:
+                docx_data = cached_data
+                docx_from_cache += 1
+            else:
+                docx_data = parser.parse_file(docx_file)
+
+                if docx_data:
+                    self.doc_cache.set(docx_file, docx_data)
+                else:
+                    continue
+
+            # Add to vector DB (same chunking logic as before)
             if docx_data["word_count"] > 500:
-                # Chunk it
                 chunks = self.chunker.chunk_simple(
                     docx_data["content"], docx_data["filename"]
                 )
 
-                print(f"\n📝 Processing: {docx_data['filename']}")
-                print(
-                    f"   Created {len(chunks)} chunks from {docx_data['paragraph_count']} paragraphs"
-                )
-
-                # Add each chunk
                 for chunk in chunks:
                     doc_id = f"docx_{docx_data['filename']}_{chunk.chunk_id}"
 
@@ -271,16 +310,16 @@ class KnowledgeBase:
                                 "source": docx_data["filename"],
                                 "type": "docx_document",
                                 "chunk_id": chunk.chunk_id,
-                                "paragraph_count": str(docx_data["paragraph_count"]),
                                 "title": docx_data["metadata"].get("title", ""),
                                 "author": docx_data["metadata"].get("author", ""),
                             }
                         ],
                     )
 
-                docx_loaded += 1
+                if not cached_data:
+                    print(f"\n📝 Processing: {docx_data['filename']}")
+                    print(f"   Created {len(chunks)} chunks")
             else:
-                # Small document - add as single document
                 doc_id = f"docx_{docx_data['filename']}"
 
                 self.collection.upsert(
@@ -290,95 +329,89 @@ class KnowledgeBase:
                         {
                             "source": docx_data["filename"],
                             "type": "docx_document",
-                            "paragraph_count": str(docx_data["paragraph_count"]),
-                            "table_count": str(docx_data["table_count"]),
                             "word_count": str(docx_data["word_count"]),
                             "title": docx_data["metadata"].get("title", ""),
-                            "author": docx_data["metadata"].get("author", ""),
                         }
                     ],
                 )
 
-                docx_loaded += 1
-                print(f"   ✓ Indexed: {docx_data['filename']}")
+                if not cached_data:
+                    print(f"   ✓ Indexed: {docx_data['filename']}")
 
-        print(f"\n✅ Loaded {docx_loaded} DOCX document(s) into vector DB")
+            docx_loaded += 1
+
+        print(f"\n✅ Loaded {docx_loaded} DOCX file(s) ({docx_from_cache} from cache)")
 
     def load_images(
         self, folder_path="data/images", min_words=5, lang="eng", auto_detect=False
     ):
-        """Load images with OCR into knowledge base (multi-language support)"""
+        """Load images with OCR (with caching)"""
         from image_ocr import ImageOCR
-        from config import Config
 
-        # Use config for language settings
-        default_lang = (
-            Config.OCR_DEFAULT_LANGUAGE
-            if hasattr(Config, "OCR_DEFAULT_LANGUAGE")
-            else "eng"
-        )
-        auto_detect = (
-            Config.OCR_AUTO_DETECT
-            if hasattr(Config, "OCR_AUTO_DETECT")
-            else auto_detect
-        )
+        ocr = ImageOCR(default_lang=lang)
+        folder = Path(folder_path)
 
-        ocr = ImageOCR(default_lang=default_lang)
+        if not folder.exists():
+            print("⚠️  No images folder found")
+            return
 
-        # Show available languages
-        print(
-            f"   OCR Languages: {', '.join(ocr.available_languages[:10])}"
-            + (
-                f", +{len(ocr.available_languages) - 10} more"
-                if len(ocr.available_languages) > 10
-                else ""
-            )
-        )
+        image_extensions = ["*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp"]
+        image_files = []
 
-        image_results = ocr.process_folder(
-            folder_path, lang=lang, auto_detect=auto_detect
-        )
+        for ext in image_extensions:
+            image_files.extend(folder.glob(f"**/{ext}"))
 
-        if not image_results:
-            print("⚠️  No images with extractable text found")
+        if not image_files:
+            print("⚠️  No images found")
             return
 
         images_loaded = 0
+        images_from_cache = 0
 
-        for img_data in image_results:
-            # Skip images with very little text
-            if img_data["word_count"] < min_words:
-                print(
-                    f"   ⏭️  Skipped {img_data['filename']} (only {img_data['word_count']} words)"
+        for img_file in image_files:
+            # Try cache first
+            cached_data = self.doc_cache.get(img_file)
+
+            if cached_data:
+                img_data = cached_data
+                images_from_cache += 1
+            else:
+                img_data = ocr.extract_text_from_image(
+                    img_file, lang=lang, auto_detect=auto_detect
                 )
+
+                if img_data:
+                    self.doc_cache.set(img_file, img_data)
+                else:
+                    continue
+
+            # Skip low-content images
+            if img_data["word_count"] < min_words:
                 continue
 
-            # Add to knowledge base
+            # Add to vector DB
             doc_id = f"image_{img_data['filename']}"
-
-            # Clean metadata for ChromaDB
-            clean_metadata = {
-                "source": img_data["filename"],
-                "type": "image_ocr",
-                "word_count": str(img_data["word_count"]),
-                "ocr_confidence": str(img_data["metadata"]["ocr_confidence"]),
-                "ocr_language": img_data["metadata"]["ocr_language"],
-                "image_size": f"{img_data['metadata']['image_width']}x{img_data['metadata']['image_height']}",
-            }
 
             self.collection.upsert(
                 documents=[img_data["content"]],
                 ids=[doc_id],
-                metadatas=[clean_metadata],
+                metadatas=[
+                    {
+                        "source": img_data["filename"],
+                        "type": "image_ocr",
+                        "word_count": str(img_data["word_count"]),
+                        "ocr_language": img_data["metadata"]["ocr_language"],
+                        "ocr_confidence": str(img_data["metadata"]["ocr_confidence"]),
+                    }
+                ],
             )
 
-            lang_code = img_data["metadata"]["ocr_language"]
             images_loaded += 1
-            print(
-                f"   ✓ Indexed: {img_data['filename']} ({img_data['word_count']} words, lang: {lang_code})"
-            )
 
-        print(f"\n✅ Loaded {images_loaded} image(s) into vector DB")
+            if not cached_data:
+                print(f"   ✓ Indexed: {img_data['filename']}")
+
+        print(f"\n✅ Loaded {images_loaded} image(s) ({images_from_cache} from cache)")
 
 
 # Quick test
