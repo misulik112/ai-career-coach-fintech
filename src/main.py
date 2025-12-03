@@ -13,10 +13,12 @@ from file_watcher import FileWatcher
 from skills_tracker import SkillsTracker
 from knowledge_graph import KnowledgeGraph
 from query_cache import QueryCache
+from config import Config
+from anytype_connector import AnytypeConnector
 
 
 class CareerCoach:
-    def __init__(self, enable_watcher=False):
+    def __init__(self):
         self.user_profile = {
             "current_role": "Economist (8 years)",
             "target_role": "Python Finance Freelancer",
@@ -24,6 +26,10 @@ class CareerCoach:
             "session_count": 0,
             "first_session": datetime.now().strftime("%Y-%m-%d %H:%M"),
         }
+        # Use config for feature flags
+        enable_watcher = Config.ENABLE_OBSIDIAN_WATCHER
+        enable_anytype = Config.ENABLE_ANYTYPE_SYNC
+        enable_cache = Config.ENABLE_CACHE
 
         # Initialize local LLM
         self.llm = LocalLLM()
@@ -46,8 +52,17 @@ class CareerCoach:
         # Initialize the knowledge_graph
         self.knowledge_graph = None
 
+        # Initialize Anytype connector
+        self.anytype = None
+        if enable_anytype:
+            self.anytype = AnytypeConnector()
+            print(f"🔗 Anytype: ENABLED")
+
         # Initialize cahce
-        self.cache = QueryCache(default_ttl_days=90)
+        self.cache = None
+        if enable_cache:
+            self.cache = QueryCache()
+            print(f"💾 Cache: ENABLED ({Config.CACHE_TTL_DAYS}-day TTL)")
 
         print("🤖 AI Career Coach initialized!")
         print(f"👤 Profile: {self.user_profile['current_role']}")
@@ -57,8 +72,41 @@ class CareerCoach:
         if enable_watcher:
             print(f"👁️  File Watcher: ENABLED")
 
-        if self.cache:
-            print(f"💾 Cache: ENABLED (90-day TTL)")
+    def sync_anytype(self):
+        """Sync Anytype workspace to knowledge base"""
+        if not self.anytype:
+            print("❌ Anytype not enabled")
+            return
+
+        print("\n" + "=" * 70)
+        print("--- Syncing Anytype Workspace ---")
+        print("=" * 70)
+
+        # Try live sync first
+        if self.anytype.authenticate():
+            self.anytype.list_spaces()
+            if self.anytype.connect_space():
+                objects = self.anytype.fetch_all_objects()
+
+                # Sync to RAG
+                synced = self.anytype.sync_to_rag(self.kb, objects)
+
+                # Cache for offline use
+                self.anytype.cache_objects(objects)
+
+                print(f"\n✅ Anytype sync complete: {synced} objects indexed")
+        else:
+            # Fallback to cache
+            print("\n⚠️  Live sync failed, trying cache...")
+            cached_objects = self.anytype.load_from_cache()
+
+            if cached_objects:
+                synced = self.anytype.sync_to_rag(self.kb, cached_objects)
+                print(f"✅ Synced from cache: {synced} objects")
+            else:
+                print("❌ No cached data available")
+
+        self.anytype.print_stats()
 
     def start_monitoring(self):
         """Start real-time file monitoring"""
@@ -283,37 +331,76 @@ Be direct and actionable."""
 
 def main():
     print("=" * 70)
-    print("🚀 AI CAREER COACH - Week 2 Day 12")
-    print("   Smart Query Caching!")
+    print("🚀 AI CAREER COACH - Week 3 Day 15")
+    print("   Professional Configuration + Anytype Integration!")
     print("=" * 70)
 
-    # Initialize coach
-    coach = CareerCoach(enable_watcher=False)
+    # Show config (safely)
+    Config.print_config()
+
+    # Initialize coach (reads from config)
+    coach = CareerCoach()
+
+    # Load existing knowledge
+    print("\n" + "=" * 70)
+    print("--- Loading Knowledge Base ---")
+    print("=" * 70)
     coach.load_knowledge()
 
+    # Test knowledge graph if Obsidian vault exists
+    import os
+
+    if os.path.exists("data/obsidian_vault"):
+        print("\n" + "=" * 70)
+        print("--- Building Knowledge Graph ---")
+        print("=" * 70)
+        coach.build_knowledge_graph()
+
+        # Show graph stats
+        if coach.knowledge_graph:
+            stats = coach.knowledge_graph.get_node_stats()
+            print(f"\n📊 Graph Statistics:")
+            print(f"   Nodes: {stats['total_nodes']}")
+            print(f"   Edges: {stats['total_edges']}")
+
+            # Show connections for Python skill if exists
+            if "skills/Python" in coach.knowledge_graph.nodes:
+                coach.explore_connections("skills/Python")
+
+    # Test Anytype sync if enabled
+    if coach.anytype and Config.ENABLE_ANYTYPE_SYNC:
+        coach.sync_anytype()
+
+    # Test cache if enabled
+    if coach.cache:
+        print("\n" + "=" * 70)
+        print("--- Testing Cache System ---")
+        print("=" * 70)
+
+        # First query (cache miss)
+        print("\n🔍 Query 1 (fresh):")
+        coach.chat_with_cache("What are my top 3 economist skills?")
+
+        # Same query (cache hit!)
+        print("\n🔍 Query 2 (same question - should hit cache):")
+        coach.chat_with_cache("What are my top 3 economist skills?")
+
+        # Show cache stats
+        coach.show_cache_stats()
+
+    # Final summary
     print("\n" + "=" * 70)
-    print("--- Testing Cache System ---")
-
-    # First query (cache miss)
-    print("\nQuery 1 (fresh):")
-    coach.chat_with_cache("What are my top 3 economist skills?")
-
-    # Same query (cache hit!)
-    print("\nQuery 2 (same question):")
-    coach.chat_with_cache("What are my top 3 economist skills?")
-
-    # Different query (cache miss)
-    print("\nQuery 3 (different):")
-    coach.chat_with_cache("How can I use my Excel skills in Python?")
-
-    # Show stats
-    coach.show_cache_stats()
-
-    print("\n" + "=" * 70)
-    print("✅ DAY 12 COMPLETE!")
-    print("📝 Next: Days 13-14 - Week 2 finale!")
-    print("🔥 Streak: 12/56 days")
-    print("🎧 REWARD: 2 MORE DAYS → AUDIOBOOK!")
+    print("✅ DAY 15 COMPLETE!")
+    print("=" * 70)
+    print("📊 System Status:")
+    print(f"   Knowledge base: ✅ Loaded")
+    print(f"   Configuration: ✅ From .env")
+    print(f"   Cache: {'✅ Active' if coach.cache else '❌ Disabled'}")
+    print(f"   Anytype: {'✅ Ready' if coach.anytype else '❌ Disabled'}")
+    print(f"   Graph: {'✅ Built' if coach.knowledge_graph else '⏭️  Skipped'}")
+    print("\n📝 Next: Day 16 - PDF parsing for research papers!")
+    print("🔥 Streak: 15/56 days (26.8%)")
+    print("💎 Premium course: 6 days away!")
     print("=" * 70)
 
 

@@ -4,11 +4,17 @@ Week 1 Day 2 - My economist -< freelancer brain
 """
 
 import ollama
+from config import Config
 
 
 class LocalLLM:
     def __init__(self, model="llama3.2"):
-        self.model = model
+        # Use config instead of hardcoded values
+        self.model = Config.OLLAMA_MODEL
+        self.host = Config.OLLAMA_HOST
+        self.temperature = Config.LLM_TEMPERATURE
+        self.max_tokens = Config.LLM_MAX_TOKENS
+
         self.system_prompt = """You are an AI Career Coach specializing in helping 
         economists transition to Python programming careers in finance.
 
@@ -23,7 +29,10 @@ Your role:
 - Connect my econ skills to Python/finance opportunities
 - Be supportive but direct
 - Keep responses under 100 words unless asked for details"""
+
         print(f"🧠 Local LLM initialized: {self.model}")
+        print(f"   Host: {self.host}")
+        print(f"   Temperature: {self.temperature}")
 
     def chat(self, user_message, context=None):
         """Send message to local LLM and get response"""

@@ -4,27 +4,29 @@ Week 2 Day 12 - Cache expensive queries with TTL
 """
 
 import json
-import os
 import hashlib
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from pathlib import Path
+from config import Config
 
 
 class QueryCache:
     """Cache system for expensive queries (API calls, LLM responses)"""
 
-    def __init__(self, cache_dir: str = "data/cache", default_ttl_days: int = 90):
-        self.cache_dir = Path(cache_dir)
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.default_ttl = timedelta(days=default_ttl_days)
+    def __init__(self):
+        self.cache_dir = Config.CACHE_DIR
+        self.default_ttl_days = Config.CACHE_TTL_DAYS
 
+        self.cache_dir = Path(self.cache_dir)
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+        self.default_ttl = timedelta(days=self.default_ttl_days)
         # Stats
         self.stats = {"hits": 0, "misses": 0, "saves": 0}
 
         print(f"💾 Query Cache initialized")
-        print(f"   Cache dir: {cache_dir}")
-        print(f"   Default TTL: {default_ttl_days} days")
+        print(f"   Cache dir: {self.cache_dir}")
+        print(f"   Default TTL: {self.default_ttl_days} days")
 
     def _hash_query(self, query: str) -> str:
         """Generate hash for query (cache key)"""

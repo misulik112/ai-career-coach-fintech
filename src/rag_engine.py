@@ -6,14 +6,23 @@ Week 1 Day 3 - Your personal knowledge base brain
 import os
 import chromadb
 from document_chunker import DocumentChunker
+from config import Config
 
 
 class KnowledgeBase:
+    # Vector database for RAG
+
     def __init__(self, kb_path="data/knowledge_base"):
-        self.kb_path = kb_path
+        self.kb_path = Config.KNOWLEDGE_BASE_PATH
+        db_path = Config.CHROMA_DB_PATH
+        collection_name = (
+            Config.CHROMA_COLLECTION_NAME
+            if hasattr(Config, "CHROMA_COLLECTION_NAME")
+            else "career_knowledge"
+        )
 
         # Initialize ChromaDB (NEW API)
-        self.client = chromadb.PersistentClient(path="data/vector_db")
+        self.client = chromadb.PersistentClient(path=db_path)
 
         # Get or create collection
         self.collection = self.client.get_or_create_collection(
