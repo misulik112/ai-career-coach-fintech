@@ -82,29 +82,48 @@ class CareerCoach:
         print("--- Syncing Anytype Workspace ---")
         print("=" * 70)
 
-        # Try live sync first
-        if self.anytype.authenticate():
-            self.anytype.list_spaces()
-            if self.anytype.connect_space():
-                objects = self.anytype.fetch_all_objects()
+        objects = []
 
-                # Sync to RAG
-                synced = self.anytype.sync_to_rag(self.kb, objects)
+        # Try 1: Check for existing cache
+        cached_objects = self.anytype.load_from_cache()
+        if cached_objects:
+            print("✅ Using existing cache")
+            objects = cached_objects
 
-                # Cache for offline use
+        # Try 2: Load from manual export folder
+        if not objects:
+            print("\n💡 Attempting manual export method...")
+            objects = self.anytype.load_from_export_folder("data/anytype_export")
+
+        # Try 3: Interactive auth (if user wants to try)
+        if not objects:
+            print(
+                "\n🔐 Would you like to try interactive authentication? (y/n): ", end=""
+            )
+            try:
+                choice = input().strip().lower()
+                if choice == "y":
+                    if self.anytype.authenticate():
+                        self.anytype.list_spaces()
+                        if self.anytype.connect_space():
+                            objects = self.anytype.fetch_all_objects()
+            except:
+                print("\n⏭️  Skipping interactive auth")
+
+        # Sync if we have objects
+        if objects:
+            synced = self.anytype.sync_to_rag(self.kb, objects)
+
+            # Cache for next time
+            if synced > 0:
                 self.anytype.cache_objects(objects)
-
                 print(f"\n✅ Anytype sync complete: {synced} objects indexed")
         else:
-            # Fallback to cache
-            print("\n⚠️  Live sync failed, trying cache...")
-            cached_objects = self.anytype.load_from_cache()
-
-            if cached_objects:
-                synced = self.anytype.sync_to_rag(self.kb, cached_objects)
-                print(f"✅ Synced from cache: {synced} objects")
-            else:
-                print("❌ No cached data available")
+            print("\n⚠️  No Anytype content available")
+            print("   Options:")
+            print("   1. Export from Anytype Desktop → data/anytype_export/")
+            print("   2. Try interactive auth next time")
+            print("   3. Focus on Obsidian (which is working great!)")
 
         self.anytype.print_stats()
 

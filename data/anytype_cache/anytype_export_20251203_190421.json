@@ -1,0 +1,159 @@
+{
+  "export_date": "2025-12-03T19:04:21.690940",
+  "object_count": 2,
+  "objects": [
+    {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "$id": "urn:anytype:schema:2025-12-03:type-page:ver-1.0",
+      "type": "object",
+      "title": "Page",
+      "x-app": "Anytype",
+      "x-icon-name": "document",
+      "x-plural": "Pages",
+      "x-schema-version": "1.0",
+      "x-type-key": "page",
+      "properties": {
+        "id": {
+          "description": "Unique identifier of the Anytype object",
+          "readOnly": true,
+          "type": "string",
+          "x-hidden": true,
+          "x-key": "id",
+          "x-order": 0
+        },
+        "Object type": {
+          "const": "Page",
+          "description": "Relation that stores the object's type",
+          "readOnly": true,
+          "type": "string",
+          "x-featured": true,
+          "x-format": "object",
+          "x-key": "type",
+          "x-order": 1
+        },
+        "Tag": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "x-featured": true,
+          "x-format": "tag",
+          "x-key": "tag",
+          "x-order": 2
+        },
+        "Backlinks": {
+          "description": "List of links coming to object",
+          "items": {
+            "type": "string"
+          },
+          "readOnly": true,
+          "type": "array",
+          "x-featured": true,
+          "x-format": "object",
+          "x-key": "backlinks",
+          "x-order": 3
+        },
+        "Creation date": {
+          "description": "Date when the object was initially created",
+          "format": "date-time",
+          "readOnly": true,
+          "type": "string",
+          "x-format": "date",
+          "x-key": "createdDate",
+          "x-order": 4
+        },
+        "Created by": {
+          "description": "Human which created this object",
+          "items": {
+            "type": "string"
+          },
+          "readOnly": true,
+          "type": "array",
+          "x-format": "object",
+          "x-key": "creator",
+          "x-object-types": [
+            "bafyreihxr3whvsowtilh4exjcbnavq5nxgomjdehmxxc5xiftahkp7c2zq"
+          ],
+          "x-order": 5
+        },
+        "Links": {
+          "description": "Outgoing links",
+          "items": {
+            "type": "string"
+          },
+          "readOnly": true,
+          "type": "array",
+          "x-format": "object",
+          "x-key": "links",
+          "x-order": 6
+        },
+        "Last modified date": {
+          "description": "Date when the object was modified last time",
+          "format": "date-time",
+          "readOnly": true,
+          "type": "string",
+          "x-format": "date",
+          "x-hidden": true,
+          "x-key": "lastModifiedDate",
+          "x-order": 7
+        },
+        "Last modified by": {
+          "description": "Human who updated the object last time",
+          "items": {
+            "type": "string"
+          },
+          "readOnly": true,
+          "type": "array",
+          "x-format": "object",
+          "x-hidden": true,
+          "x-key": "lastModifiedBy",
+          "x-object-types": [
+            "bafyreihxr3whvsowtilh4exjcbnavq5nxgomjdehmxxc5xiftahkp7c2zq"
+          ],
+          "x-order": 8
+        },
+        "Last opened date": {
+          "description": "Date when the object was modified last opened",
+          "format": "date-time",
+          "readOnly": true,
+          "type": "string",
+          "x-format": "date",
+          "x-hidden": true,
+          "x-key": "lastOpenedDate",
+          "x-order": 9
+        },
+        "Emoji": {
+          "type": "string",
+          "x-format": "emoji",
+          "x-hidden": true,
+          "x-key": "iconEmoji",
+          "x-order": 10
+        },
+        "Image": {
+          "description": "Path to the file in the export",
+          "type": "string",
+          "x-format": "file",
+          "x-hidden": true,
+          "x-key": "iconImage",
+          "x-order": 11
+        },
+        "Cover image or color": {
+          "type": "string",
+          "x-format": "longtext",
+          "x-hidden": true,
+          "x-key": "coverId",
+          "x-order": 12
+        }
+      }
+    },
+    {
+      "   id": "try-more-with-anytype",
+      "type": "Note",
+      "name": "Try More With Anytype",
+      "description": "# Try more with Anytype   \n## **Import Content**   \nGo to Space Settings and select `Import` to bring in content from Notion, Obsidian (Markdown), or other supported formats.   \n   \n## **Collaborate**   \nAll Spaces and Chats are **fully private** \u2013 only members you invite can access them.   \nSelect `Invite Members` and choose the type of invite link to share:   \n- **Links without Approval: **Editor (full edit access) or Viewer (read-only) \u2192 people can join instantly.   \n- **Request Approval:** You approve new members before they join and assign their roles.   \n   \nEach Space or Chat can only have one active link at a time. Switching between Editor/Viewer/Request access creates or disables links accordingly.   \n   \n## **Publish to the Web**   \nPublish individual Objects as web pages:    \n- Click `Share` in the top-right corner to publish.    \n- Customize the part of the link after the `/` if you\u2019d like.    \n- Upgrade the membership to reserve your personal subdomain on `any.org`   \n   \n   \n --- \n   \n*We're excited for you to start your journey! Feel free to experiment and find what works best for you.*",
+      "tags": [],
+      "createdDate": null,
+      "lastModifiedDate": null
+    }
+  ]
+}

@@ -47,25 +47,25 @@ class AnytypeConnector:
             return False
 
         try:
-            if self.api_key:
-                # Use API key if available in config
-                print("🔐 Using API key from environment...")
-                self.client = Anytype(api_key=self.api_key)
-                print("✅ Authentication successful!")
-                return True
+            print("\n🔐 Authenticating with Anytype...")
 
-            else:
-                # Fall back to interactive auth
-                print("\n🔐 Authenticating with Anytype...")
-                print("   ℹ️  Open Anytype desktop app")
-                print("   ℹ️  Go to Settings > API > Generate Code")
-                print("   ℹ️  Enter the 4-digit code when prompted\n")
+            # The anytype-client uses interactive auth only (no API key parameter)
+            # It will open browser or show a code
+            self.client = Anytype()
 
-                self.client = Anytype()
-                self.client.auth()
+            # Call auth() method - this will prompt for code or open browser
+            print("   ℹ️  This will open your browser or show a code")
+            print("   ℹ️  Follow the prompts to authenticate\n")
+
+            self.client.auth()
+
+            print("✅ Authentication successful!")
+            return True
 
         except Exception as e:
             print(f"❌ Authentication failed: {e}")
+            print("\n💡 TIP: Make sure Anytype Desktop is running")
+            print("   Alternative: Use manual export workflow")
             return False
 
     def list_spaces(self) -> List[Dict]:
@@ -199,25 +199,43 @@ class AnytypeConnector:
                 if not extracted["content"] or len(extracted["content"]) < 10:
                     continue
 
+                # Clean metadata for ChromaDB (no lists, only str/int/float/bool)
+                clean_metadata = {}
+                for key, value in extracted["metadata"].items():
+                    if isinstance(value, list):
+                        # Convert lists to comma-separated strings
+                        clean_metadata[key] = (
+                            ", ".join(str(v) for v in value) if value else ""
+                        )
+                    elif isinstance(value, (str, int, float, bool)):
+                        clean_metadata[key] = value
+                    elif value is None:
+                        clean_metadata[key] = ""
+                    else:
+                        # Convert other types to string
+                        clean_metadata[key] = str(value)
+
                 # Add to knowledge base
                 doc_id = f"anytype_{extracted['id']}"
 
                 kb.collection.upsert(
                     documents=[extracted["content"]],
                     ids=[doc_id],
-                    metadatas=[extracted["metadata"]],
+                    metadatas=[clean_metadata],
                 )
 
                 synced_count += 1
+                print(f"   ✓ Synced: {extracted['title']}")
 
             except Exception as e:
-                print(f"   ⚠️  Failed to sync {obj.get('id', 'unknown')}: {e}")
+                obj_id = obj.get("id", "unknown")
+                print(f"   ⚠️  Failed to sync {obj_id}: {e}")
                 continue
 
         self.stats["objects_synced"] = synced_count
         self.stats["last_sync"] = datetime.now().isoformat()
 
-        print(f"✅ Synced {synced_count}/{len(objects)} objects to RAG")
+        print(f"\n✅ Synced {synced_count}/{len(objects)} objects to RAG")
 
         return synced_count
 
@@ -274,6 +292,87 @@ class AnytypeConnector:
         except Exception as e:
             print(f"❌ Failed to load cache: {e}")
             return []
+
+    def load_from_export_folder(
+        self, export_folder: str = "data/anytype_export"
+    ) -> List[Dict]:
+        """Load from Anytype manual export (reliable fallback)"""
+        export_path = Path(export_folder)
+
+        if not export_path.exists():
+            export_path.mkdir(parents=True, exist_ok=True)
+            print(f"\n📁 Created export folder: {export_folder}")
+            print(f"\n💡 To use Anytype content:")
+            print(f"   1. Open Anytype Desktop")
+            print(f"   2. Go to Settings > Export")
+            print(f"   3. Export as Markdown or JSON")
+            print(f"   4. Save to: {export_folder.replace('data/', '')}")
+            print(f"   5. Run this script again\n")
+            return []
+
+        objects = []
+
+        print(f"\n📂 Scanning export folder: {export_folder}")
+
+        # Load JSON files
+        json_files = list(export_path.glob("**/*.json"))
+        for file in json_files:
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+
+                    # Handle different JSON structures
+                    if isinstance(data, list):
+                        objects.extend(data)
+                    else:
+                        objects.append(data)
+
+                print(f"   ✓ Loaded: {file.name}")
+            except Exception as e:
+                print(f"   ⚠️  Failed to load {file.name}: {e}")
+
+        # Load Markdown files
+        md_files = list(export_path.glob("**/*.md"))
+        for file in md_files:
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    content = f.read()
+
+                    # Parse frontmatter if exists
+                    import frontmatter
+
+                    try:
+                        post = frontmatter.load(file)
+                        metadata = post.metadata
+                        content = post.content
+                    except:
+                        metadata = {}
+
+                    objects.append(
+                        {
+                            "   id": file.stem,
+                            "type": metadata.get("type", "Note"),
+                            "name": metadata.get(
+                                "title", file.stem.replace("-", " ").title()
+                            ),
+                            "description": content,
+                            "tags": metadata.get("tags", []),
+                            "createdDate": metadata.get("created"),
+                            "lastModifiedDate": metadata.get("modified"),
+                        }
+                    )
+
+                print(f"   ✓ Loaded: {file.name}")
+            except Exception as e:
+                print(f"   ⚠️  Failed to load {file.name}: {e}")
+
+        if objects:
+            print(f"\n✅ Loaded {len(objects)} objects from export")
+        else:
+            print(f"\n⚠️  No files found in {export_folder}")
+            print(f"   Export some content from Anytype Desktop first!")
+
+        return objects
 
     def get_stats(self) -> Dict:
         """Get sync statistics"""
