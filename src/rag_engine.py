@@ -304,6 +304,82 @@ class KnowledgeBase:
 
         print(f"\n✅ Loaded {docx_loaded} DOCX document(s) into vector DB")
 
+    def load_images(
+        self, folder_path="data/images", min_words=5, lang="eng", auto_detect=False
+    ):
+        """Load images with OCR into knowledge base (multi-language support)"""
+        from image_ocr import ImageOCR
+        from config import Config
+
+        # Use config for language settings
+        default_lang = (
+            Config.OCR_DEFAULT_LANGUAGE
+            if hasattr(Config, "OCR_DEFAULT_LANGUAGE")
+            else "eng"
+        )
+        auto_detect = (
+            Config.OCR_AUTO_DETECT
+            if hasattr(Config, "OCR_AUTO_DETECT")
+            else auto_detect
+        )
+
+        ocr = ImageOCR(default_lang=default_lang)
+
+        # Show available languages
+        print(
+            f"   OCR Languages: {', '.join(ocr.available_languages[:10])}"
+            + (
+                f", +{len(ocr.available_languages) - 10} more"
+                if len(ocr.available_languages) > 10
+                else ""
+            )
+        )
+
+        image_results = ocr.process_folder(
+            folder_path, lang=lang, auto_detect=auto_detect
+        )
+
+        if not image_results:
+            print("⚠️  No images with extractable text found")
+            return
+
+        images_loaded = 0
+
+        for img_data in image_results:
+            # Skip images with very little text
+            if img_data["word_count"] < min_words:
+                print(
+                    f"   ⏭️  Skipped {img_data['filename']} (only {img_data['word_count']} words)"
+                )
+                continue
+
+            # Add to knowledge base
+            doc_id = f"image_{img_data['filename']}"
+
+            # Clean metadata for ChromaDB
+            clean_metadata = {
+                "source": img_data["filename"],
+                "type": "image_ocr",
+                "word_count": str(img_data["word_count"]),
+                "ocr_confidence": str(img_data["metadata"]["ocr_confidence"]),
+                "ocr_language": img_data["metadata"]["ocr_language"],
+                "image_size": f"{img_data['metadata']['image_width']}x{img_data['metadata']['image_height']}",
+            }
+
+            self.collection.upsert(
+                documents=[img_data["content"]],
+                ids=[doc_id],
+                metadatas=[clean_metadata],
+            )
+
+            lang_code = img_data["metadata"]["ocr_language"]
+            images_loaded += 1
+            print(
+                f"   ✓ Indexed: {img_data['filename']} ({img_data['word_count']} words, lang: {lang_code})"
+            )
+
+        print(f"\n✅ Loaded {images_loaded} image(s) into vector DB")
+
 
 # Quick test
 if __name__ == "__main__":

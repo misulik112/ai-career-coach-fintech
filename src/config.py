@@ -5,7 +5,7 @@ Week 3 Day 15 - Professional config handling
 
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from dotenv import load_dotenv
 
 # Load .env file
@@ -66,6 +66,20 @@ class Config:
     # =============================================================================
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: str = os.getenv("LOG_FILE", "logs/coach.log")
+
+    # =============================================================================
+    # OCR Configuration
+    # =============================================================================
+    TESSDATA_PREFIX: Optional[str] = os.getenv("TESSDATA_PREFIX")
+    OCR_DEFAULT_LANGUAGE: str = os.getenv("OCR_DEFAULT_LANGUAGE", "eng")
+    OCR_AUTO_DETECT: bool = os.getenv("OCR_AUTO_DETECT", "false").lower() == "true"
+    OCR_LANGUAGES: List[str] = os.getenv("OCR_LANGUAGES", "eng").split(",")
+
+    # Set TESSDATA_PREFIX if configured
+    if TESSDATA_PREFIX and os.path.exists(TESSDATA_PREFIX):
+        import os as _os
+
+        _os.environ["TESSDATA_PREFIX"] = TESSDATA_PREFIX
 
     @classmethod
     def validate(cls):
