@@ -5,6 +5,7 @@ Week 1 Day 3 - Your personal knowledge base brain
 
 import os
 import chromadb
+from document_chunker import DocumentChunker
 
 
 class KnowledgeBase:
@@ -19,6 +20,9 @@ class KnowledgeBase:
             name="career_knowledge",
             metadata={"description": "Economist skills and transition goals"},
         )
+
+        # Initialize document chunker
+        self.chunker = DocumentChunker(chunk_size=500, overlap=50)
 
         print(f"📚 Knowledge Base initialized")
         print(f"   Stored documents: {self.collection.count()}")
@@ -108,6 +112,48 @@ class KnowledgeBase:
             print(f"   ✓ Indexed: {job_data['filename']}")
 
         print(f"\n✅ Loaded {jobs_loaded} job post(s) into vector DB")
+
+    def add_document_with_chunks(self, filepath: str, doc_type: str = "general"):
+        """Add document with smart chunking"""
+        from file_processor import FileProcessor
+
+        processor = FileProcessor()
+        file_data = processor.load_file(filepath)
+
+        if not file_data or not file_data["content"]:
+            return
+
+        # Create chunks
+        chunks = self.chunker.chunk_by_markdown_headings(
+            file_data["content"], file_data["filename"]
+        )
+
+        print(f"\n📄 Processing: {file_data['filename']}")
+        print(f"   Created {len(chunks)} smart chunks")
+
+        # Add each chunk to vector DB
+        for chunk in chunks:
+            doc_id = f"{doc_type}_{file_data['filename']}_{chunk.chunk_id}"
+
+            self.collection.upsert(
+                documents=[chunk.text],
+                ids=[doc_id],
+                metadatas=[
+                    {
+                        "source": file_data["filename"],
+                        "type": doc_type,
+                        "chunk_id": chunk.chunk_id,
+                        "heading": chunk.heading,
+                        "chunk_type": chunk.chunk_type,
+                    }
+                ],
+            )
+
+        # Measure quality
+        quality = self.chunker.measure_quality(chunks)
+        print(f"   Quality: {quality['bad_cut_rate']:.1f}% bad cuts")
+
+        return chunks
 
 
 # Quick test
