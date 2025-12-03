@@ -3,8 +3,6 @@ AI Career Coach - Week 1 Day 3
 Now with personal knowledge base (RAG)!
 """
 
-import os
-import sys
 from datetime import datetime
 from typing import List
 from llm_engine import LocalLLM
